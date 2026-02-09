@@ -6,9 +6,13 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('user', 'admin') DEFAULT 'user',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    -- TBD: aggiungere altre informazioni (Nome, Cognome, Età, Sesso, ecc)
+    role ENUM('student', 'professor', 'admin') DEFAULT 'student',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    first_name VARCHAR(100) DEFAULT NULL,
+    last_name VARCHAR(100) DEFAULT NULL,
+    phone VARCHAR(20) DEFAULT NULL,
+    age INT DEFAULT NULL,
+    gender VARCHAR(10) DEFAULT NULL
 );
 
 --  ROOMS

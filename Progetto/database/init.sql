@@ -4,18 +4,38 @@
 -- USERS: dati di esempio
 INSERT INTO users (username, password_hash, role)
 VALUES
-('test', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'user'),
+('annarita', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'student'),
+('giuseppe', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'student'),
+
+('test_student', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'student'),
+('test_professor', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'professor'),
+
 ('admin', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'admin');
 -- "password" + 10 salt rounds -> $2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W
 
 -- ROOMS: dati di esempio
 INSERT INTO rooms (name, location, capacity)
 VALUES
-('Aula Gaming 1', 'Piano 1', 10),
-('Aula Gaming 2', 'Piano 1', 8),
+('Aula Gaming 1 (5v5)', 'Piano 0', 10),
+('Aula Gaming 2 (3v3)', 'Piano 0', 10),
+('Aula Gaming Grande', 'Piano 0', 20),
+('Aula Streaming 1', 'Piano 0', 5),
+('Aula Streaming 2', 'Piano 0', 5),
+('Aula Studio 1', 'Piano 0', 5),
+('Aula Studio 2', 'Piano 0', 5),
+('Aula Studio 3', 'Piano 0', 5),
 ('Aula Riunioni 1', 'Piano 1', 20),
 ('Aula Riunioni 2', 'Piano 1', 50),
-('Sala Riunioni', 'Piano 2', 20);
+('Aula Riunioni 3', 'Piano 1', 20),
+('Aula Riunioni 4', 'Piano 1', 50),
+('Aula Lezioni 1', 'Piano 1', 60),
+('Aula Lezioni 2', 'Piano 1', 60),
+('Aula Lezioni 3', 'Piano 1', 60),
+('Sala Riunioni 1 (Grande)', 'Piano 2', 80),
+('Sala Riunioni 2 (Grande)', 'Piano 2', 80),
+('Sala Riunioni 3 (Piccola)', 'Piano 2', 40),
+('Sala Riunioni 4 (Piccola)', 'Piano 2', 40);
+
 
 -- READERS: dati di esempio
 INSERT INTO readers (room_id, reader_uid, public_key)
@@ -35,13 +55,30 @@ LwIDAQAB
 (2, 'READER002', 'FAKE_PUBLIC_KEY_002'),
 (3, 'READER003', 'FAKE_PUBLIC_KEY_003'),
 (4, 'READER004', 'FAKE_PUBLIC_KEY_004'),
-(5, 'READER005', 'FAKE_PUBLIC_KEY_005');
+(5, 'READER005', 'FAKE_PUBLIC_KEY_005'),
+(6, 'READER006', 'FAKE_PUBLIC_KEY_006'),
+(7, 'READER007', 'FAKE_PUBLIC_KEY_007'),
+(8, 'READER008', 'FAKE_PUBLIC_KEY_008'),
+(9, 'READER009', 'FAKE_PUBLIC_KEY_009'),
+(10, 'READER010', 'FAKE_PUBLIC_KEY_010'),
+(11, 'READER011', 'FAKE_PUBLIC_KEY_011'),
+(12, 'READER012', 'FAKE_PUBLIC_KEY_012'),
+(13, 'READER013', 'FAKE_PUBLIC_KEY_013'),
+(14, 'READER014', 'FAKE_PUBLIC_KEY_014'),
+(15, 'READER015', 'FAKE_PUBLIC_KEY_015'),
+(16, 'READER016', 'FAKE_PUBLIC_KEY_016'),
+(17, 'READER017', 'FAKE_PUBLIC_KEY_017'),
+(18, 'READER018', 'FAKE_PUBLIC_KEY_018'),
+(19, 'READER019', 'FAKE_PUBLIC_KEY_019'),
 
 -- CARDS: dati di esempio
 INSERT INTO cards (user_id, card_uid)
 VALUES
-(1, 'CARD-TEST-001'),
-(3, 'CARD-ADMIN-001');
+(1, 'CARD-GIU-001'),
+(2, 'CARD-NARI-001'),
+(3, 'CARD-ST-001'),
+(4, 'CARD-PR-001'),
+(5, 'CARD-ADMIN-001');
 
 -- BOOKINGS: dati di esempio
 INSERT INTO bookings (user_id, room_id, start_time, end_time)
@@ -55,5 +92,5 @@ INSERT INTO access_logs (card_id, reader_id, access_granted, message)
 VALUES
 (1, 1, TRUE, 'Accesso consentito: Prenotazione valida'),
 (1, 2, FALSE, 'Accesso negato: Nessuna prenotazione'),
-(2, 3, TRUE, 'Accesso admin – Override');
+(3, 3, TRUE, 'Accesso admin – Override');
 

@@ -1,4 +1,11 @@
-# Securing-SpaceHub
+# Securing-SpaceHub 🔐
+
+**Securing SpaceHub** è un progetto focalizzato sull'implementazione del framework di sicurezza NIST SP 800-53 (Livello di Impatto Moderate). L'obiettivo è blindare l'infrastruttura di gestione aule, integrando controlli di accesso rigorosi, crittografia avanzata e monitoraggio continuo per garantire la conformità agli standard di sicurezza federali.
+
+> 💡 Per una descrizione completa sul funzionamento della web app e dei suoi componenti fare riferimento alla [documentazione](https://github.com/WebRTC-Projects-Unina/Rooms_Reservation).
+
+> **Corso:** System Security (2025/2026)
+
 
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠎⠀⠀⠀⠀⠘⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠘⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀

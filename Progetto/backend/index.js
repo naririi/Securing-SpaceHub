@@ -1,27 +1,34 @@
 // disabilita il controllo SSL per i certificati self-signed
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
+import { loginWithAppRole, getDbSecrets, getDynamicDbCreds, getAppSecrets } from "./src/services/vault.js";
 import express from "express";
 import session from "express-session";
 import path from "path";
-import dotenv from "dotenv";
-import { fileURLToPath } from "url";
 import { initDbPool } from "./src/services/db.js";
 import cors from "cors";
 import https from "https";
 import fs from "fs";
 
-// --- DOTENV CONFIG
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
+// --- VAULT INIT
+await loginWithAppRole();
+
+const db = await getDbSecrets();
+process.env.DB_HOST = db.DB_HOST;
+process.env.DB_PORT = db.DB_PORT;
+process.env.DB_NAME = db.DB_NAME;
+process.env.DB_USER = db.DB_USER;
+process.env.DB_PASSWORD = db.DB_PASS;
+
+const cookie = await getAppSecrets();
+const sessionSecret = cookie.SESSION_SECRET;
+
 
 // --- DB INIT
 await initDbPool();
 
 // --- SETUP BACKEND
 const app = express();
-const sessionSecret = process.env.SESSION_SECRET || "super-secret-key";
 const port = process.env.BACKEND_PORT || 3000;
 
 app.use(cors({
@@ -46,6 +53,7 @@ app.use(session({
 }));
 
 // --- SETUP FOR FRONTEND
+const __dirname = import.meta.dirname;
 const buildPath = path.join(__dirname, "..", "frontend", "dist");
 app.use(express.static(buildPath));
 

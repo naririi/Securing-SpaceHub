@@ -1,16 +1,14 @@
 import vault from "node-vault";
 
-// Client Vault
+// client vault
 const client = vault({
   endpoint: process.env.VAULT_ADDR || "https://localhost:8200",
   requestOptions: {
-    strictSSL: false // necessario perché usi certificati self-signed
+    strictSSL: false // necessario per certificati self-signed
   }
 });
 
-/**
- * Login con AppRole
- */
+// login AppRole
 export async function loginWithAppRole() {
   if (!process.env.VAULT_ROLE_ID || !process.env.VAULT_SECRET_ID) {
     throw new Error("VAULT_ROLE_ID o VAULT_SECRET_ID mancanti");
@@ -25,25 +23,25 @@ export async function loginWithAppRole() {
 }
 
 /**
- * Legge i segreti del database (KV v2)
+ * legge i segreti del database (KV v2)
  * path: secret/db
  */
 export async function getDbSecrets() {
   const res = await client.read("secret/data/db");
-  return res.data.data; // { db_host, db_port, db_name, db_user, db_pass }
+  return res.data.data; // { DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS }
 }
 
 /**
- * Legge i segreti dell'app (KV v2)
+ * legge i segreti del cookie (KV v2)
  * path: secret/app
  */
 export async function getAppSecrets() {
   const res = await client.read("secret/data/cookie");
-  return res.data.data; // { sessionSecret }
+  return res.data.data; // { SESSION_SECRET }
 }
 
 /**
- * (Opzionale) Dynamic DB credentials
+ * credenziali per database dinamiche
  * path: database/creds/aule-role
  */
 export async function getDynamicDbCreds() {

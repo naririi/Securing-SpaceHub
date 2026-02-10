@@ -12,17 +12,14 @@ import fs from "fs";
 
 // --- VAULT INIT
 await loginWithAppRole();
-
 const db = await getDbSecrets();
 process.env.DB_HOST = db.DB_HOST;
 process.env.DB_PORT = db.DB_PORT;
 process.env.DB_NAME = db.DB_NAME;
 process.env.DB_USER = db.DB_USER;
-process.env.DB_PASSWORD = db.DB_PASS;
-
+process.env.DB_PASS = db.DB_PASS;
 const cookie = await getAppSecrets();
 const sessionSecret = cookie.SESSION_SECRET;
-
 
 // --- DB INIT
 await initDbPool();

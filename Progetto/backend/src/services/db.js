@@ -1,7 +1,6 @@
 import mysql from "mysql2/promise";
 
-
-let pool;
+let pool = null;
 
 export async function initDbPool() {
   if (!pool) {

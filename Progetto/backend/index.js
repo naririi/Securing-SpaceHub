@@ -1,9 +1,8 @@
 // disabilita il controllo SSL per i certificati self-signed
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-import { loginWithAppRole, getDbSecrets, getDynamicDbCreds, getAppSecrets } from "./src/services/vault.js";
+import { loginWithAppRole, getDbSecrets } from "./src/services/vault.js";
 import express from "express";
-import session from "express-session";
 import path from "path";
 import { initDbPool } from "./src/services/db.js";
 import cors from "cors";
@@ -18,8 +17,6 @@ process.env.DB_PORT = db.DB_PORT;
 process.env.DB_NAME = db.DB_NAME;
 process.env.DB_USER = db.DB_USER;
 process.env.DB_PASS = db.DB_PASS;
-const cookie = await getAppSecrets();
-const sessionSecret = cookie.SESSION_SECRET;
 
 // --- DB INIT
 await initDbPool();
@@ -30,24 +27,13 @@ const port = process.env.BACKEND_PORT || 3000;
 
 app.use(cors({
     origin: "https://localhost:5173",
-    credentials: true
+    credentials: true,
+    // aggiungiamo 'Authorization' agli header permessi per consentire il passaggio del Token Bearer
+    allowedHeaders: ["Content-Type", "Authorization"] 
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// --- SETUP USER SESSION
-app.use(session({
-    secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        httpOnly: true,
-        secure: true,           // https
-        sameSite: 'none',       // needed in local
-        maxAge: 1000 * 60 * 60  // 1h
-    }
-}));
 
 // --- SETUP FOR FRONTEND
 const __dirname = import.meta.dirname;
@@ -61,7 +47,7 @@ import authRoutes from "./src/routes/authRoutes.js";
 
 bookingsRoutes(app);
 readerRoutes(app);
-authRoutes(app);
+authRoutes(app); // le rotte di auth ora restituiranno 404/deprecated, ma lasciamo l'import per pulizia
 
 app.get("/", (req, res) => {
     res.sendFile(path.resolve(buildPath, "index.html"));    // routing for index.html

@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; 
 import { apiPost } from "../api";
 import "../style/CreateBooking.css";
 
 export default function CreateBooking() {
   const nav = useNavigate();
+  const { token } = useAuth();      // recuperiamo il token JWT da inviare al backend
   const location = useLocation();   // hook per leggere i dati passati eventualmente da Rooms.jsx (state)
 
   const { preSelectedRoom, preSelectedStart, preSelectedEnd } = location.state || {};
@@ -25,7 +27,8 @@ export default function CreateBooking() {
     setSuccessMsg("");
 
     try {
-      const data = await apiPost("/api/crea-prenotazione", { roomId, startTime, endTime });
+      // passiamo il token come terzo argomento alla funzione apiPost
+      const data = await apiPost("/api/crea-prenotazione", { roomId, startTime, endTime }, token);
 
       if (data.error) {
         setErrorMsg(data.error || "Errore sconosciuto");

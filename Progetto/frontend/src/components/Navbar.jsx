@@ -3,11 +3,12 @@ import { useAuth } from "../context/AuthContext";
 import "../style/Navbar.css";
 
 export default function Navbar() {
-    const { user, logout } = useAuth();
+    // estraiamo le funzioni login e register dal context
+    const { user, logout, login, register } = useAuth();
 
     return (
         <nav className="navbar">
-            {/* 1. LOGO */}
+            {/* LOGO */}
             <Link to="/" className="nav-logo">
                 SpaceHub 💬
             </Link>
@@ -34,7 +35,8 @@ export default function Navbar() {
                         </Link>
                         
                         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "15px", borderLeft: "1px solid #eee", paddingLeft: "15px" }}>
-                            <span className="user-greeting">Ciao, {user.username}</span>
+                            <span className="user-greeting">Ciao, {user.username || user.preferred_username}</span>
+                            
                             <button onClick={logout} className="btn-logout">
                                 🚪 Logout
                             </button>
@@ -42,12 +44,12 @@ export default function Navbar() {
                     </>
                 ) : (
                     <>
-                        <Link to="/login" className="btn-secondary">
+                        <button onClick={login} className="btn-secondary">
                             Login
-                        </Link>
-                        <Link to="/register" className="btn-primary">
+                        </button>
+                        <button onClick={register} className="btn-primary">
                             Registrati
-                        </Link>
+                        </button>
                     </>
                 )}
             </div>

@@ -2,16 +2,7 @@
 -- database init file
 
 -- USERS: dati di esempio
-INSERT INTO users (username, password_hash, role)
-VALUES
-('annarita', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'student'),
-('giuseppe', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'student'),
-
-('test_student', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'student'),
-('test_professor', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'professor'),
-
-('admin', '$2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W', 'admin');
--- "password" + 10 salt rounds -> $2a$10$zasBP.zYFEKfLbGkdP.WlOiT2qPyvh8Nq2X3O8l158cHKvdfhOu9W
+-- da inserire nel keycloak
 
 -- ROOMS: dati di esempio
 INSERT INTO rooms (name, location, capacity)
@@ -93,4 +84,3 @@ VALUES
 (1, 1, TRUE, 'Accesso consentito: Prenotazione valida'),
 (1, 2, FALSE, 'Accesso negato: Nessuna prenotazione'),
 (3, 3, TRUE, 'Accesso admin – Override');
-

@@ -32,15 +32,6 @@ export async function getDbSecrets() {
 }
 
 /**
- * legge i segreti del cookie (KV v2)
- * path: secret/app
- */
-export async function getAppSecrets() {
-  const res = await client.read("secret/data/cookie");
-  return res.data.data; // { SESSION_SECRET }
-}
-
-/**
  * credenziali per database dinamiche
  * path: database/creds/aule-role
  */

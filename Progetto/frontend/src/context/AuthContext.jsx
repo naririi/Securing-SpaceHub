@@ -1,5 +1,12 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { apiGet, apiPost } from "../api";
+import Keycloak from "keycloak-js";
+
+// configurazione di Keycloak
+const client = new Keycloak({
+    url: "https://localhost:8443",
+    realm: "spacehub", 
+    clientId: "spacehub"       
+});
 
 // il context è un meccanismo fornito da React che ti permette di condividere dati tra i componenti (es. lo stato)
 
@@ -9,49 +16,59 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);         // dichiara lo stato locale per tenere traccia dell'utente loggato
     const [loading, setLoading] = useState(true);   // stato di caricamento della pagina (per non reindirizzare a login quando si ricarica la pagina)
+    const [token, setToken] = useState(null);       // stato per il token JWT da usare nelle chiamate API
 
-    async function checkAuth() {
-        try {
-            const res = await apiGet("/auth/me");
-            if (res.loggedIn) {
-                setUser(res.user);
-            } else {
-                setUser(null);
-            }
-        } catch (error) {
-            console.error("Errore checkAuth:", error);
-            setUser(null);
-        } finally {
-            // finito il controllo (con successo o errore), togliamo il caricamento
-            setLoading(false);
-        }
+    // funzione login: reindirizza alla pagina di login di Keycloak
+    function login() {
+        client.login();
     }
 
-    async function login(username, password) {
-        const res = await apiPost("/auth/login", { username, password });
-        if (res.userId) await checkAuth();      // se il login ha successo, chiama checkAuth per aggiornare lo stato dell'utente locale
-        return res;
-    }
-
-    async function logout() {
-        await apiPost("/auth/logout");
+    // funzione logout: esegue il logout su Keycloak
+    function logout() {
+        client.logout();
         setUser(null);
+        setToken(null);
     }
 
-    async function register(username, password) {
-        const res = await apiPost("/auth/register", { username, password });
-        if (res.userId) await checkAuth();
-        return res;
+    // funzione register: reindirizza alla pagina di registrazione di Keycloak
+    function register() {
+        client.register();
     }
 
     // viene eseguito al montaggio del componente, verifica subito se l'utente è loggato
     useEffect(() => {
-        checkAuth();
+        // inizializza Keycloak invece di chiamare checkAuth personalizzato
+        client.init({ onLoad: "check-sso", checkLoginIframe: false })
+            .then(authenticated => {
+                if (authenticated) {
+                    setToken(client.token);
+                    // carica il profilo utente da Keycloak
+                    client.loadUserProfile().then(profile => {
+                        setUser({
+                            ...profile,
+                            username: profile.username,
+                            // mappiamo i ruoli di Keycloak dentro l'oggetto user per compatibilità
+                            roles: client.realmAccess?.roles || []
+                        });
+                    });
+                } else {
+                    setUser(null);
+                }
+            })
+            .catch(err => {
+                console.error("Errore inizializzazione Keycloak:", err);
+                setUser(null);
+            })
+            .finally(() => {
+                // finito il controllo (con successo o errore), togliamo il caricamento
+                setLoading(false);
+            });
     }, []);
 
     // rende disponibile ai componenti figli i valori user, login, logout e register.
+    // token' servirà per le chiamate al backend
     return (
-        <AuthContext.Provider value={{ user, login, logout, register, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, register, loading, token }}>
             {children}      
         </AuthContext.Provider>
     );

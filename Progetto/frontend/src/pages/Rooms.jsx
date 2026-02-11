@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiGet } from "../api";
+import { useAuth } from "../context/AuthContext";
 import "../style/Rooms.css"; 
 
 export default function Rooms() {
     const nav = useNavigate();
+    const { token } = useAuth();
 
     // adesso l'utente inserisce prima la data e poi gli orari di inizio e fine
     // quindi utilizziamo degli stati separati per data e ora
@@ -18,7 +20,7 @@ export default function Rooms() {
 
     async function loadRooms() {
         setError("");
-        setSearched(true); // Imposta che abbiamo provato a cercare
+        setSearched(true); // imposta che abbiamo provato a cercare
 
         // validazione anche su frontend
         if (!selectedDate || !startTime || !endTime) {
@@ -38,8 +40,10 @@ export default function Rooms() {
         const endFull = `${selectedDate}T${endTime}`;
 
         try {
+            // passiamo il token
             const res = await apiGet(
-                `/api/aule-disponibili?start=${encodeURIComponent(startFull)}&end=${encodeURIComponent(endFull)}`
+                `/api/aule-disponibili?start=${encodeURIComponent(startFull)}&end=${encodeURIComponent(endFull)}`,
+                token
             );
             
             const fetchedRooms = res.rooms || [];           // agguirna lo stato di rooms con l'elenco di aule restituito

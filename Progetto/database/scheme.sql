@@ -3,7 +3,7 @@
 
 --  USERS
 CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id VARCHAR(36) NOT NULL,
     username VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('student', 'professor', 'admin') DEFAULT 'student',
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS readers (
 --  CARDS (badge utenti)
 CREATE TABLE IF NOT EXISTS cards (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
     card_uid VARCHAR(100) NOT NULL UNIQUE,
     active BOOLEAN DEFAULT TRUE,
     issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS cards (
 --  BOOKINGS
 CREATE TABLE IF NOT EXISTS bookings (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
     room_id INT NOT NULL,
     start_time DATETIME NOT NULL,
     end_time DATETIME NOT NULL,

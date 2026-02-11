@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { apiGet, apiPut } from "../api";
 import "../style/CreateBooking.css";
 
 export default function EditBooking() {
   const { id } = useParams();
   const nav = useNavigate();
+  const { token } = useAuth();
 
   const [booking, setBooking] = useState(null);
   const [startTime, setStartTime] = useState("");
@@ -19,8 +21,12 @@ export default function EditBooking() {
   // "appena hai finito di renderizzare la pagina, esegui questo codice automaticamentente".
   useEffect(() => {
     async function loadData() {
+      // se non c'è il token (es. keycloak sta ancora inizializzando), aspettiamo
+      if (!token) return;
+
       try {
-        const res = await apiGet(`/api/prenotazioni/${id}`);
+        // passiamo il token alla apiGet
+        const res = await apiGet(`/api/prenotazioni/${id}`, token);
         const data = res.booking || res; 
 
         if (data) {
@@ -40,7 +46,7 @@ export default function EditBooking() {
       }
     }
     loadData();
-  }, [id]);   // si riattiva se cambia l'id
+  }, [id, token]);   // si riattiva se cambia l'id o se arriva il token
 
   // funzione che gestisce l'invio delle modifiche backend 
   const handleUpdate = async (e) => {
@@ -51,7 +57,8 @@ export default function EditBooking() {
     setSuccessMsg("");
 
     try {
-      const data = await apiPut(`/api/prenotazioni/${id}`, { startTime, endTime });
+      // passiamo il token come terzo argomento alla apiPut
+      const data = await apiPut(`/api/prenotazioni/${id}`, { startTime, endTime }, token);
   
       if (data.error) {
         setErrorMsg(data.error || "Errore sconosciuto");

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiGet, apiDelete } from "../api";
+import { useAuth } from "../context/AuthContext"; 
 import "../style/MyBookings.css";
 
 // funzione che controlla se la prenotazione è attiva ORA
@@ -10,14 +11,19 @@ function isBookingActive(start, end) {
 }
 
 export default function MyBookings() {
+    const { token } = useAuth();
     const [list, setList] = useState([]);
     // messaggi di feedback (verdi -> successo / rosso -> fallimento)
     const [feedback, setFeedback] = useState({ msg: "", type: "" });
 
     // funzione per prelevare tutte le prenotazioni dell'utente
     async function load() {
+        // se non abbiamo ancora il token, non facciamo la chiamata
+        if (!token) return;
+
         try {
-            const res = await apiGet("/api/prenotazioni");
+            // passiamo il token alla apiGet
+            const res = await apiGet("/api/prenotazioni", token);
             // le prenotazioni sono ordinate dalla più recente alla più vecchia
             const bookings = res.bookings || [];
             bookings.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
@@ -32,11 +38,12 @@ export default function MyBookings() {
         if (!confirm("Sei sicuro di voler eliminare questa prenotazione?")) return;
 
         try {
-            const res = await apiDelete(`/api/prenotazioni/${id}`);
+            // passiamo il token alla apiDelete
+            const res = await apiDelete(`/api/prenotazioni/${id}`, token);
             if (res.error) {
                 setFeedback({ msg: res.error, type: "error" });
             } else {
-                load();
+                load(); // ricarica la lista usando il token (già presente nel scope o nella func load)
                 setFeedback({ msg: "Prenotazione eliminata con successo!", type: "success" });
                 // rimuovi messaggio dopo 3 secondi
                 setTimeout(() => setFeedback({ msg: "", type: "" }), 3000);
@@ -47,7 +54,8 @@ export default function MyBookings() {
         }
     }
 
-    useEffect(() => { load(); }, []);
+    // ricarica quando il token è pronto
+    useEffect(() => { load(); }, [token]);
 
     // helper per cambiare i colori alle prenotazioni
     const getCardGradient = (index) => {

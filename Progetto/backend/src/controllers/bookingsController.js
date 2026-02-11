@@ -1,5 +1,6 @@
 import { bookingModel } from "../models/bookingModel.js";
 import { roomModel } from "../models/roomModel.js";
+import { userModel } from "../models/userModel.js";
 
 // helper per convertire la data JS in formato compatibile con mariadb 'YYYY-MM-DD HH:MM:SS'
 const toSqlDate = (dateObj) => {
@@ -63,7 +64,7 @@ export const listRooms = async (req, res) => {
 export const getUserBookingById = async (req, res) => {
     try {
         const bookingId = req.params.id;
-        const userId    = req.session.userId;
+        const userId    = req.user.id; 
         const booking   = await bookingModel.getBookingById(bookingId);
 
         if (!booking) {
@@ -86,7 +87,7 @@ export const getUserBookingById = async (req, res) => {
 // --- RECUPERA TUTTE LE PRENOTAZIONI UTENTE
 export const getUserBookings = async (req, res) => {
     try {
-        const userId = req.session.userId;
+        const userId = req.user.id;
         const bookings = await bookingModel.getActiveBookingsByUser(userId);
         res.json({ bookings });
     } catch (err) {
@@ -99,7 +100,8 @@ export const getUserBookings = async (req, res) => {
 // --- CREA PRENOTAZIONE
 export const createBooking = async (req, res) => {
     try {
-        const userId = req.session.userId;
+        const userId = req.user.id;
+        const username = req.user.username;
         const { roomId, startTime, endTime } = req.body;
 
         if (!roomId || !startTime || !endTime) {
@@ -136,6 +138,9 @@ export const createBooking = async (req, res) => {
             });
         }
 
+        // prima di creare la prenotazione, ci assicuriamo che l'utente esista nella tabella 'users'
+        await userModel.ensureUserExists(userId, username);
+
         // creazione
         const booking = await bookingModel.createBooking(
             userId,
@@ -159,7 +164,7 @@ export const createBooking = async (req, res) => {
 // --- MODIFICA PRENOTAZIONE
 export const updateBooking = async (req, res) => {
     try {
-        const userId = req.session.userId;
+        const userId = req.user.id;
         const bookingId = req.params.id;
         const { startTime, endTime } = req.body;
 
@@ -228,7 +233,7 @@ export const updateBooking = async (req, res) => {
 // --- ELIMINA PRENOTAZIONE (soft delete → status='cancelled')
 export const deleteBooking = async (req, res) => {
     try {
-        const userId = req.session.userId;
+        const userId = req.user.id;
         const bookingId = req.params.id;
 
         const booking = await bookingModel.getBookingById(bookingId);

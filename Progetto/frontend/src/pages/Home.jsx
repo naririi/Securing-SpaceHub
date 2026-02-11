@@ -6,7 +6,8 @@ import "../style/Home.css";
 
 export default function Home() {
     const nav = useNavigate();
-    const { user } = useAuth();
+    // recuperiamo 'login' e 'token' dal context
+    const { user, login, token } = useAuth();
 
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -30,8 +31,10 @@ export default function Home() {
                 const startStr = getLocalISOString(now);
                 const endStr = getLocalISOString(oneHourLater);
 
+                // passiamo il token come secondo argomento (se null, apiGet non mette l'header, va bene per endpoint pubblici)
                 const res = await apiGet(
-                    `/api/aule-disponibili?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`
+                    `/api/aule-disponibili?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`,
+                    token
                 );
 
                 const fetchedRooms = res.rooms || [];
@@ -51,7 +54,7 @@ export default function Home() {
         // timer per aggiornare l'orologio visualizzato ogni minuto
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
-    }, []);
+    }, [token]);
 
     // gestione click su "Prenota Subito"
     const handleQuickBook = (roomId) => {
@@ -101,7 +104,8 @@ export default function Home() {
                         <p className="action-desc">Filtra per data e orario specifico</p>
                     </div>
 
-                    <div className="action-card" onClick={() => nav(user ? "/my-bookings" : "/login")}>
+                    {/* se non c'è user, chiama login() */}
+                    <div className="action-card" onClick={() => user ? nav("/my-bookings") : login()}>
                         <span className="action-icon">📅</span>
                         <h3 className="action-title">Le mie Prenotazioni</h3>
                         <p className="action-desc">Gestisci le tue prenotazioni e avvia la riunione</p>

@@ -5,6 +5,7 @@ import jwksClient from "jwks-rsa";
 
 // configurazione client per scaricare le chiavi pubbliche di Keycloak
 const client = jwksClient({
+    // Assicurati che questo URL sia corretto per il tuo ambiente locale
     jwksUri: 'https://localhost:8443/realms/spacehub/protocol/openid-connect/certs'
 });
 
@@ -60,11 +61,12 @@ export const requireLogin = (req, res, next) => {
         }
 
         // 3. se valido, attacchiamo i dati dell'utente alla richiesta
-        // Keycloak mette l'ID utente nel campo 'sub' (Subject)
         req.user = {
             id: decoded.sub,                        // UUID di Keycloak
             username: decoded.preferred_username,   // Username scelto su Keycloak
             email: decoded.email,
+            given_name: decoded.given_name,         // Nome (first_name)
+            family_name: decoded.family_name,       // Cognome (last_name)
             roles: decoded.realm_access?.roles || []
         };
         
@@ -98,7 +100,9 @@ export const checkLogged = async (req, res) => {
             loggedIn: true,
             user: {
                 id: decoded.sub,
-                username: decoded.preferred_username
+                username: decoded.preferred_username,
+                email: decoded.email,             // utile avere anche l'email nel frontend
+                roles: decoded.realm_access?.roles || []
             }
         });
     });

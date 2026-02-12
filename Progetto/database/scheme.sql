@@ -4,6 +4,7 @@
 --  USERS
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(36) NOT NULL PRIMARY KEY,
+    email VARCHAR(255) NULL UNIQUE,
     username VARCHAR(100) NOT NULL UNIQUE,
     role ENUM('student', 'professor', 'admin') DEFAULT 'student',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -19,7 +20,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     location VARCHAR(255),
-    capacity INT DEFAULT 0
+    capacity INT DEFAULT 0,
+    access_level ENUM('student', 'professor', 'admin') NOT NULL DEFAULT 'student'
 );
 
 --  SMART CARD READERS

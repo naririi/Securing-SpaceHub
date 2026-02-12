@@ -1,6 +1,7 @@
 import { bookingModel } from "../models/bookingModel.js";
 import { roomModel } from "../models/roomModel.js";
 import { userModel } from "../models/userModel.js";
+import { checkRoomAccess } from "../policies/accessPolicies.js";
 
 // helper per convertire la data JS in formato compatibile con mariadb 'YYYY-MM-DD HH:MM:SS'
 const toSqlDate = (dateObj) => {
@@ -43,6 +44,8 @@ export const listRooms = async (req, res) => {
         name: r.name,
         location: r.location,
         capacity: r.capacity,
+        // ritorniamo anche il livello di accesso per info (opzionale)
+        accessLevel: r.access_level, 
         available: !overlap
       });
     }
@@ -100,8 +103,9 @@ export const getUserBookings = async (req, res) => {
 // --- CREA PRENOTAZIONE
 export const createBooking = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const username = req.user.username;
+        // recuperiamo tutti i dati utente dal token
+        const { id, username, email, given_name, family_name, roles } = req.user;
+        
         const { roomId, startTime, endTime } = req.body;
 
         if (!roomId || !startTime || !endTime) {
@@ -130,6 +134,15 @@ export const createBooking = async (req, res) => {
             return res.status(404).json({ error: "Stanza inesistente" });
         }
 
+        // verifichiamo se i ruoli dell'utente sono sufficienti per il livello della stanza
+        const isAuthorized = checkRoomAccess(roles, room.access_level);
+
+        if (!isAuthorized) {
+            return res.status(403).json({ 
+                error: `Accesso negato. Questa aula richiede un livello di accesso superiore'}` 
+            });
+        }
+
         // check sovrapposizione
         const overlap = await bookingModel.hasOverlap(roomId, sqlStart, sqlEnd);
         if (overlap) {
@@ -139,11 +152,12 @@ export const createBooking = async (req, res) => {
         }
 
         // prima di creare la prenotazione, ci assicuriamo che l'utente esista nella tabella 'users'
-        await userModel.ensureUserExists(userId, username);
+        // Passiamo tutti i 5 parametri al model: id, username, email, firstName (given_name), lastName (family_name)
+        await userModel.ensureUserExists(id, username, email, given_name, family_name);
 
         // creazione
         const booking = await bookingModel.createBooking(
-            userId,
+            id, // usiamo l'id estratto dal token
             roomId,
             sqlStart,
             sqlEnd

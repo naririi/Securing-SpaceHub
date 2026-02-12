@@ -27,7 +27,6 @@ VALUES
 ('Sala Riunioni 3 (Piccola)', 'Piano 2', 40),
 ('Sala Riunioni 4 (Piccola)', 'Piano 2', 40);
 
-
 -- READERS: dati di esempio
 INSERT INTO readers (room_id, reader_uid, public_key)
 VALUES
@@ -60,28 +59,30 @@ LwIDAQAB
 (16, 'READER016', 'FAKE_PUBLIC_KEY_016'),
 (17, 'READER017', 'FAKE_PUBLIC_KEY_017'),
 (18, 'READER018', 'FAKE_PUBLIC_KEY_018'),
-(19, 'READER019', 'FAKE_PUBLIC_KEY_019'),
+(19, 'READER019', 'FAKE_PUBLIC_KEY_019');
 
 -- CARDS: dati di esempio
--- ATTENZIONE: inserire user_id ottenuto da keycloak
-INSERT INTO cards (user_id, card_uid)
-VALUES
-(1, 'CARD-GIU-001'),
-(2, 'CARD-NARI-001'),
-(3, 'CARD-ST-001'),
-(4, 'CARD-PR-001'),
-(5, 'CARD-ADMIN-001');
+-- ATTENZIONE: inserire dopo aver ottenuto user_id ottenuto da keycloak
+--INSERT INTO cards (user_id, card_uid)
+--VALUES
+--(1, 'CARD-GIU-001'),
+--(2, 'CARD-NARI-001'),
+--(3, 'CARD-ST-001'),
+--(4, 'CARD-PR-001'),
+--(5, 'CARD-ADMIN-001');
 
 -- BOOKINGS: dati di esempio
-INSERT INTO bookings (user_id, room_id, start_time, end_time)
-VALUES
-(1, 1, '2026-01-20 14:00:00', '2026-01-20 16:00:00'),
-(1, 2, '2026-01-21 10:00:00', '2026-01-21 12:00:00'),
-(1, 3, '2026-01-22 09:00:00', '2026-01-22 11:00:00');
+-- ATTENZIONE: inserire dopo aver ottenuto user_id ottenuto da keycloak
+--INSERT INTO bookings (user_id, room_id, start_time, end_time)
+--VALUES
+--(1, 1, '2026-01-20 14:00:00', '2026-01-20 16:00:00'),
+--(1, 2, '2026-01-21 10:00:00', '2026-01-21 12:00:00'),
+--(1, 3, '2026-01-22 09:00:00', '2026-01-22 11:00:00');
 
 -- ACCESS LOGS: dati di esempio
-INSERT INTO access_logs (card_id, reader_id, access_granted, message)
-VALUES
-(1, 1, TRUE, 'Accesso consentito: Prenotazione valida'),
-(1, 2, FALSE, 'Accesso negato: Nessuna prenotazione'),
-(3, 3, TRUE, 'Accesso admin – Override');
+-- ATTENZIONE: inserire dopo aver ottenuto user_id ottenuto da keycloak
+--INSERT INTO access_logs (card_id, reader_id, access_granted, message)
+--VALUES
+--(1, 1, TRUE, 'Accesso consentito: Prenotazione valida'),
+--(1, 2, FALSE, 'Accesso negato: Nessuna prenotazione'),
+--(3, 3, TRUE, 'Accesso admin – Override');

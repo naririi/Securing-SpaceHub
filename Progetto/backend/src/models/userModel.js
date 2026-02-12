@@ -18,29 +18,33 @@ export const userModel = {
         return rows[0] || null;
     },
 
-    // non serve più passwordHash, ma solo l'ID (UUID) che ci arriva dal token
-    async createUser(id, username) {
+    async createUser(id, username, email, firstName, lastName) {
         const [result] = await pool.query(
-            "INSERT INTO users (id, username) VALUES (?, ?)",
-            [id, username]
+            `INSERT INTO users (id, username, email, first_name, last_name) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [id, username, email, firstName, lastName]
         );
 
         return {
-            id: id, // l'ID è quello che abbiamo passato noi (UUID)
-            username
+            id,
+            username,
+            email,
+            firstName,
+            lastName
         };
     },
 
-    // serve a sincronizzare l'utente: se esiste non fa nulla (o aggiorna), se non esiste lo crea.
-    async ensureUserExists(id, username) {
+    async ensureUserExists(id, username, email, firstName, lastName) {
         // cerchiamo l'utente
         const existing = await this.findById(id);
         
         if (existing) {
-            return existing; // se c'è già, a posto così
+            // Opzionale: Se volessi tenere aggiornati i dati (es. l'utente cambia cognome su Keycloak),
+            // potresti fare un UPDATE qui. Per ora ritorniamo l'esistente come richiesto.
+            return existing; 
         }
 
-        // se non c'è, lo creiamo usando l'ID di Keycloak
-        return await this.createUser(id, username);
+        // se non c'è, lo creiamo passando tutti i dati
+        return await this.createUser(id, username, email, firstName, lastName);
     }
 };

@@ -63,6 +63,7 @@ LwIDAQAB
 (19, 'READER019', 'FAKE_PUBLIC_KEY_019'),
 
 -- CARDS: dati di esempio
+-- ATTENZIONE: inserire user_id ottenuto da keycloak
 INSERT INTO cards (user_id, card_uid)
 VALUES
 (1, 'CARD-GIU-001'),

@@ -44,10 +44,12 @@ app.use(express.static(buildPath));
 import bookingsRoutes from "./src/routes/bookingsRoutes.js";
 import readerRoutes from "./src/routes/readerRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
+import policiesRoutes from "./src/routes/policiesRoutes.js";
 
 bookingsRoutes(app);
 readerRoutes(app);
 authRoutes(app); // le rotte di auth ora restituiranno 404/deprecated, ma lasciamo l'import per pulizia
+policiesRoutes(app);
 
 app.get("/", (req, res) => {
     res.sendFile(path.resolve(buildPath, "index.html"));    // routing for index.html

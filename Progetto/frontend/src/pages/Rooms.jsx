@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiGet } from "../api";
 import { useAuth } from "../context/AuthContext";
@@ -6,7 +6,7 @@ import "../style/Rooms.css";
 
 export default function Rooms() {
     const nav = useNavigate();
-    const { token } = useAuth();
+    const { token, user } = useAuth(); // recuperiamo anche user per leggere i ruoli
 
     // adesso l'utente inserisce prima la data e poi gli orari di inizio e fine
     // quindi utilizziamo degli stati separati per data e ora
@@ -17,6 +17,47 @@ export default function Rooms() {
     const [rooms, setRooms] = useState([]);     // array per contenere l'elenco delle aule restituite dal backend
     const [error, setError] = useState("");
     const [searched, setSearched] = useState(false);
+
+    const [roleHierarchy, setRoleHierarchy] = useState(null);
+
+    // effetto per caricare la gerarchia dei ruoli all'avvio della pagina
+    useEffect(() => {
+        const fetchRoles = async () => {
+            try {
+                const response = await fetch("/api/roles");
+                if (response.ok) {
+                    const data = await response.json();
+                    setRoleHierarchy(data);
+                }
+            } catch (err) {
+                console.error("Errore nel recupero della gerarchia ruoli:", err);
+            }
+        };
+        fetchRoles();
+    }, []);
+
+    // helper per calcolare il livello dell'utente loggato
+    const getUserLevel = (roles) => {
+        if (!roleHierarchy || !roles || roles.length === 0) return 1; 
+
+        let maxLevel = 0;
+        roles.forEach(role => {
+            const val = roleHierarchy[role];
+            if (val && val > maxLevel) {
+                maxLevel = val;
+            }
+        });
+        
+        return maxLevel === 0 ? (roleHierarchy.student || 1) : maxLevel;
+    };
+
+    const userLevel = getUserLevel(user?.roles);
+
+    // funzione che controlla se l'utente può prenotare la singola stanza
+    const checkRoomAccess = (roomAccessLevel) => {
+        const requiredLevel = (roomAccessLevel && roleHierarchy) ? (roleHierarchy[roomAccessLevel] || 1) : 1;
+        return userLevel >= requiredLevel;
+    };
 
     async function loadRooms() {
         setError("");
@@ -56,8 +97,8 @@ export default function Rooms() {
         }
     }
 
-    // funzione per gestire il click su "Prenota"
-    const handleBookClick = (roomId) => {
+    // funzione per gestire il click su "Prenota" (AGGIUNTO accessLevel tra i parametri)
+    const handleBookClick = (roomId, accessLevel) => {
         const startFull = `${selectedDate}T${startTime}`;
         const endFull = `${selectedDate}T${endTime}`;
 
@@ -66,7 +107,8 @@ export default function Rooms() {
             state: {
                 preSelectedRoom: roomId,
                 preSelectedStart: startFull,
-                preSelectedEnd: endFull
+                preSelectedEnd: endFull,
+                accessLevel: accessLevel // passiamo anche questo a CreateBooking
             }
         });
     };
@@ -148,39 +190,55 @@ export default function Rooms() {
                 )}
 
                 <div className="rooms-grid">
-                    {rooms.map((r, index) => (
-                        <div key={r.id} className="room-card">
-                            <div className="card-header" style={{ background: getCardGradient(index) }}>
-                                <div className="badge-container">
+                    {rooms.map((r, index) => {
+                        // verifichiamo se l'utente ha l'autorizzazione per questa singola stanza
+                        const isAuthorized = checkRoomAccess(r.accessLevel);
+
+                        return (
+                            <div key={r.id} className="room-card">
+                                <div className="card-header" style={{ background: getCardGradient(index) }}>
+                                    <div className="badge-container">
+                                        {r.available ? (
+                                            <span className="badge success">✔ Disponibile</span>
+                                        ) : (
+                                            <span className="badge error">✖ Occupata</span>
+                                        )}
+                                    </div>
+                                    <h4 className="card-room-code">ID: {r.id}</h4>
+                                </div>
+
+                                <div className="card-body">
+                                    <h3 className="card-title">{r.name}</h3>
+                                    <p className="card-detail">📍 {r.location}</p>
+                                    <p className="card-detail">👥 Capienza: {r.capacity} persone</p>
+                                    {/* aggiunto per far capire all'utente chi può prenotare */}
+                                    <p className="card-detail" style={{ fontSize: "0.85rem", color: "#555" }}>
+                                        🔐 Livello richiesto: <strong>{r.accessLevel || 'student'}</strong>
+                                    </p>
+
+                                    {/* logica dei bottoni condizionale per permessi e disponibilità */}
                                     {r.available ? (
-                                        <span className="badge success">✔ Disponibile</span>
+                                        isAuthorized ? (
+                                            <button 
+                                                onClick={() => handleBookClick(r.id, r.accessLevel)} 
+                                                className="book-button"
+                                            >
+                                                Prenota Ora
+                                            </button>
+                                        ) : (
+                                            <button disabled className="book-button" style={{ backgroundColor: "#ccc", cursor: "not-allowed", color: "#666" }}>
+                                                Livello Insufficiente
+                                            </button>
+                                        )
                                     ) : (
-                                        <span className="badge error">✖ Occupata</span>
+                                        <button disabled className="book-button" style={{ backgroundColor: "#ffebee", color: "#d32f2f", cursor: "not-allowed" }}>
+                                            Non Disponibile
+                                        </button>
                                     )}
                                 </div>
-                                <h4 className="card-room-code">ID: {r.id}</h4>
                             </div>
-
-                            <div className="card-body">
-                                <h3 className="card-title">{r.name}</h3>
-                                <p className="card-detail">📍 {r.location}</p>
-                                <p className="card-detail">👥 Capienza: {r.capacity} persone</p>
-
-                                {r.available ? (
-                                    <button 
-                                        onClick={() => handleBookClick(r.id)} 
-                                        className="book-button"
-                                    >
-                                        Prenota Ora
-                                    </button>
-                                ) : (
-                                    <button disabled className="book-button">
-                                        Non Disponibile
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </div>

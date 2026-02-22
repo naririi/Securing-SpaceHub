@@ -97,6 +97,18 @@ export default function EditBooking() {
 
         <form onSubmit={handleUpdate} className="booking-form">
           
+          {/* mostriamo all'utente in quale aula sta modificando l'orario */}
+          <div className="form-group">
+            <label>Stanza prenotata</label>
+            <input
+              type="text"
+              className="form-input"
+              value={`Aula ID: ${booking.room_id}`}
+              disabled
+              style={{ backgroundColor: "#e9ecef", cursor: "not-allowed" }}
+            />
+          </div>
+
           <div className="form-group">
             <label>Inizio</label>
             <input

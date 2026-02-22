@@ -6,12 +6,52 @@ import "../style/Home.css";
 
 export default function Home() {
     const nav = useNavigate();
-    // recuperiamo 'login' e 'token' dal context
+    // recuperiamo 'login' e 'token' dal context (e 'user' per leggere i ruoli)
     const { user, login, token } = useAuth();
 
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
+
+    const [roleHierarchy, setRoleHierarchy] = useState(null);
+
+    useEffect(() => {
+        const fetchRoles = async () => {
+            try {
+                const response = await fetch("/api/roles");
+                if (response.ok) {
+                    const data = await response.json();
+                    setRoleHierarchy(data);
+                }
+            } catch (err) {
+                console.error("Errore nel recupero della gerarchia ruoli:", err);
+            }
+        };
+        fetchRoles();
+    }, []);
+
+    // helper per calcolare il livello dell'utente loggato
+    const getUserLevel = (roles) => {
+        if (!roleHierarchy || !roles || roles.length === 0) return 1; 
+
+        let maxLevel = 0;
+        roles.forEach(role => {
+            const val = roleHierarchy[role];
+            if (val && val > maxLevel) {
+                maxLevel = val;
+            }
+        });
+        
+        return maxLevel === 0 ? (roleHierarchy.student || 1) : maxLevel;
+    };
+
+    const userLevel = getUserLevel(user?.roles);
+
+    // funzione che controlla se l'utente può prenotare la singola stanza
+    const checkRoomAccess = (roomAccessLevel) => {
+        const requiredLevel = (roomAccessLevel && roleHierarchy) ? (roleHierarchy[roomAccessLevel] || 1) : 1;
+        return userLevel >= requiredLevel;
+    };
 
     // helper per ottenere la stringa "YYYY-MM-DDTHH:MM" dell'ora locale
     const getLocalISOString = (date) => {
@@ -56,8 +96,8 @@ export default function Home() {
         return () => clearInterval(timer);
     }, [token]);
 
-    // gestione click su "Prenota Subito"
-    const handleQuickBook = (roomId) => {
+    // gestione click su "Prenota Subito" (AGGIUNTO accessLevel)
+    const handleQuickBook = (roomId, accessLevel) => {
         const now = new Date();
         const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
 
@@ -65,7 +105,8 @@ export default function Home() {
             state: {
                 preSelectedRoom: roomId,
                 preSelectedStart: getLocalISOString(now),
-                preSelectedEnd: getLocalISOString(oneHourLater)
+                preSelectedEnd: getLocalISOString(oneHourLater),
+                accessLevel: accessLevel // passiamo il livello richiesto alla pagina di creazione
             }
         });
     };
@@ -126,28 +167,48 @@ export default function Home() {
                             <p className="loading-text">Nessuna aula libera in questo momento. Prova a cercare per un altro orario.</p>
                         ) : (
                             <div className="home-rooms-grid">
-                                {rooms.map((r, index) => (
-                                    <div key={r.id} className="home-room-card">
-                                        <div className="h-room-header" style={{ background: getCardGradient(index) }}>
-                                            <span>ID: {r.id}</span>
-                                            {r.available && <span>✔</span>}
+                                {rooms.map((r, index) => {
+                                    // verifichiamo se l'utente ha l'autorizzazione
+                                    const isAuthorized = checkRoomAccess(r.accessLevel);
+
+                                    return (
+                                        <div key={r.id} className="home-room-card">
+                                            <div className="h-room-header" style={{ background: getCardGradient(index) }}>
+                                                <span>ID: {r.id}</span>
+                                                {r.available && <span>✔</span>}
+                                            </div>
+                                            <div className="h-room-body">
+                                                <h4 className="h-room-name">{r.name}</h4>
+                                                <span className="h-room-info">📍 {r.location}</span>
+                                                <span className="h-room-info">👥 Cap: {r.capacity}</span>
+                                                
+                                                {/* info sul livello e logica del bottone in base all'autorizzazione */}
+                                                <span className="h-room-info" style={{ fontSize: "0.85rem", color: "#666", marginTop: "4px" }}>
+                                                    🔐 Lvl: {r.accessLevel || 'student'}
+                                                </span>
+
+                                                {r.available && (
+                                                    isAuthorized ? (
+                                                        <button 
+                                                            className="h-room-btn"
+                                                            onClick={() => handleQuickBook(r.id, r.accessLevel)}
+                                                        >
+                                                            Prenota per 1 ora
+                                                        </button>
+                                                    ) : (
+                                                        <button 
+                                                            className="h-room-btn" 
+                                                            style={{ backgroundColor: "#ccc", cursor: "not-allowed", color: "#666" }}
+                                                            disabled
+                                                        >
+                                                            Livello Insufficiente
+                                                        </button>
+                                                    )
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="h-room-body">
-                                            <h4 className="h-room-name">{r.name}</h4>
-                                            <span className="h-room-info">📍 {r.location}</span>
-                                            <span className="h-room-info">👥 Cap: {r.capacity}</span>
-                                            
-                                            {r.available && (
-                                                <button 
-                                                    className="h-room-btn"
-                                                    onClick={() => handleQuickBook(r.id)}
-                                                >
-                                                    Prenota per 1 ora
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </>

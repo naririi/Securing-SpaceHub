@@ -1,11 +1,10 @@
 import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
 // import bcrypt from "bcrypt"; // non serve più, le password le gestisce Keycloak
-// import {userModel} from "../models/userModel.js"; // potrebbe servire in futuro per sincronizzare i dati, per ora lo lascio commentato o attivo se ti serve altrove
+import {userModel} from "../models/userModel.js";
 
 // configurazione client per scaricare le chiavi pubbliche di Keycloak
 const client = jwksClient({
-    // Assicurati che questo URL sia corretto per il tuo ambiente locale
     jwksUri: 'https://localhost:8443/realms/spacehub/protocol/openid-connect/certs'
 });
 
@@ -18,12 +17,19 @@ function getKey(header, callback) {
     });
 }
 
+// funzione helper per calcolare il ruolo principale da salvare nel DB
+const getPrimaryRole = (roles) => {
+    if (!roles) return 'student';
+    if (roles.includes('admin')) return 'admin';
+    if (roles.includes('professor')) return 'professor';
+    return 'student'; // fallback di default
+};
+
 // --- LOGIN
 // con Keycloak, il login avviene interamente lato frontend. 
 export const login = async (req, res) => {
     return res.status(404).json({ error: "Endpoint deprecato. Usa Keycloak su frontend." });
 };
-
 
 // --- REGISTER
 // con Keycloak, il register avviene interamente lato frontend. 
@@ -54,11 +60,13 @@ export const requireLogin = (req, res, next) => {
     const token = authHeader.split(" ")[1];
 
     // 2. verifichiamo il token usando la chiave pubblica di Keycloak
-    jwt.verify(token, getKey, { algorithms: ["RS256"] }, (err, decoded) => {
+    jwt.verify(token, getKey, { algorithms: ["RS256"] }, async (err, decoded) => {
         if (err) {
             console.error("Errore verifica token:", err.message);
             return res.status(401).json({ error: "Token non valido o scaduto" });
         }
+
+        const roles = decoded.realm_access?.roles || [];
 
         // 3. se valido, attacchiamo i dati dell'utente alla richiesta
         req.user = {
@@ -67,8 +75,24 @@ export const requireLogin = (req, res, next) => {
             email: decoded.email,
             given_name: decoded.given_name,         // Nome (first_name)
             family_name: decoded.family_name,       // Cognome (last_name)
-            roles: decoded.realm_access?.roles || []
+            roles: roles
         };
+
+        // --- SINCRONIZZAZIONE GLOBALE CON IL DB ---
+        // ogni volta che intercettiamo una richiesta protetta, aggiorniamo il DB
+        try {
+            const dbRole = getPrimaryRole(roles);
+            await userModel.syncUserKeycloak(
+                req.user.id, 
+                req.user.username, 
+                req.user.email, 
+                req.user.given_name, 
+                req.user.family_name, 
+                dbRole
+            );
+        } catch (dbErr) {
+            console.error("Errore durante la sincronizzazione dell'utente nel DB:", dbErr);
+        }
         
         // manteniamo la compatibilità col vecchio codice che usava req.session.userId?
         // se il resto del backend usa req.session.userId, possiamo mapparlo qui:
@@ -90,9 +114,27 @@ export const checkLogged = async (req, res) => {
 
     const token = authHeader.split(" ")[1];
 
-    jwt.verify(token, getKey, { algorithms: ["RS256"] }, (err, decoded) => {
+    jwt.verify(token, getKey, { algorithms: ["RS256"] }, async (err, decoded) => {
         if (err) {
             return res.json({ loggedIn: false });
+        }
+
+        const roles = decoded.realm_access?.roles || [];
+
+        // --- SINCRONIZZAZIONE ANCHE ALL'AVVIO DELL'APP ---
+        // così i nuovi utenti o i cambi di ruolo vengono recepiti immediatamente
+        try {
+            const dbRole = getPrimaryRole(roles);
+            await userModel.syncUserKeycloak(
+                decoded.sub, 
+                decoded.preferred_username, 
+                decoded.email, 
+                decoded.given_name, 
+                decoded.family_name, 
+                dbRole
+            );
+        } catch (dbErr) {
+            console.error("Errore sync in checkLogged:", dbErr);
         }
 
         // il token è valido
@@ -102,7 +144,7 @@ export const checkLogged = async (req, res) => {
                 id: decoded.sub,
                 username: decoded.preferred_username,
                 email: decoded.email,             // utile avere anche l'email nel frontend
-                roles: decoded.realm_access?.roles || []
+                roles: roles
             }
         });
     });

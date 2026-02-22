@@ -18,6 +18,24 @@ export const userModel = {
         return rows[0] || null;
     },
 
+    // FUNZIONE DI SINCRONIZZAZIONE GLOBALE (usata nel middleware)
+    async syncUserKeycloak(id, username, email, firstName, lastName, role) {
+        const query = `
+            INSERT INTO users (id, username, email, first_name, last_name, role) 
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+                username = VALUES(username),
+                email = VALUES(email),
+                first_name = VALUES(first_name),
+                last_name = VALUES(last_name),
+                role = VALUES(role)
+        `;
+        
+        await pool.query(query, [id, username, email, firstName, lastName, role]);
+
+        return { id, username, email, firstName, lastName, role };
+    },
+
     async createUser(id, username, email, firstName, lastName) {
         const [result] = await pool.query(
             `INSERT INTO users (id, username, email, first_name, last_name) 
@@ -39,9 +57,22 @@ export const userModel = {
         const existing = await this.findById(id);
         
         if (existing) {
-            // Opzionale: Se volessi tenere aggiornati i dati (es. l'utente cambia cognome su Keycloak),
-            // potresti fare un UPDATE qui. Per ora ritorniamo l'esistente come richiesto.
-            return existing; 
+            // L'utente esiste: facciamo l'UPDATE dei dati per tenerli sincronizzati
+            await pool.query(
+                `UPDATE users 
+                 SET username = ?, email = ?, first_name = ?, last_name = ? 
+                 WHERE id = ?`,
+                [username, email, firstName, lastName, id]
+            );
+            
+            // Ritorniamo l'oggetto unendo i vecchi dati (es. il ruolo) con quelli appena aggiornati
+            return { 
+                ...existing, 
+                username, 
+                email, 
+                first_name: firstName, 
+                last_name: lastName 
+            }; 
         }
 
         // se non c'è, lo creiamo passando tutti i dati

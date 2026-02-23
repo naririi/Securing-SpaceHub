@@ -63,10 +63,11 @@ def main_loop():
                     if raw_data:
                         card_id_str = raw_data.rstrip(b'\x00').decode(errors='ignore')
                         print(f"[DETECTED] card uid: {card_id_str}")
-                        
-                        payload = {"card_uid": card_id_str, "reader_uid": READER_UID}
+
+                        ts = int(time.time() * 1000)    # current timestamp in ms
+                        payload = {"card_uid": card_id_str, "reader_uid": READER_UID, "timestamp": ts}
                         signature = sign_payload(reader_private_key, payload)
-                        full_body = {"card_uid": card_id_str, "reader_uid": READER_UID, "signature": signature}
+                        full_body = {"card_uid": card_id_str, "reader_uid": READER_UID, "timestamp": ts, "signature": signature}
                         
                         print("[NETWORK] sending request to backend...")
                         try:
@@ -75,12 +76,23 @@ def main_loop():
                             if res.status_code in [200, 401, 403]:
                                 response_data = res.json()
                                 if verify_server_response(server_public_key, response_data):
-                                    if response_data.get('access') is True:
-                                        print(f"✅ [ACCESS GRANTED] {response_data.get('message')}")
-                                        reader.signal_success()
+                                    # verify server timestamp
+                                    server_ts = response_data.get('server_timestamp', 0)
+                                    current_ts = int(time.time() * 1000)
+                                    
+                                    # 5 seconds tollerance (5000 ms)
+                                    if abs(current_ts - server_ts) <= 5000:
+
+                                        if response_data.get('access') is True:
+                                            print(f"✅ [ACCESS GRANTED] {response_data.get('message')}")
+                                            reader.signal_success()
+                                        else:
+                                            print(f"⛔ [ACCESS DENIED] {response_data.get('message')}")
+                                            reader.signal_error()
                                     else:
-                                        print(f"⛔ [ACCESS DENIED] {response_data.get('message')}")
+                                        print("⚠️ [SECURITY FAIL] Server Timestamp expired (Possibile Replay Attack)")
                                         reader.signal_error()
+
                                 else:
                                     print("⚠️ [SECURITY FAIL] invalid server signature")
                                     reader.signal_error()

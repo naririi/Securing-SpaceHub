@@ -128,7 +128,28 @@ export default function Home() {
             {/* HERO SECTION */}
             <div className="home-hero">
                 <h1 className="hero-title">
-                    {user ? `Ciao, ${user.username}!` : "Benvenuto in SpaceHub 💬"}
+                    {user ? (
+                        <>
+                            Ciao, {user.username}! 
+                            {/* visualizzazione dello Status */}
+                            <span className="status-badge" style={{
+                                fontSize: "0.5em", 
+                                verticalAlign: "middle", 
+                                marginLeft: "10px",
+                                padding: "5px 10px",
+                                borderRadius: "12px",
+                                backgroundColor: user.roles.includes('professor') ? "#e74c3c" : 
+                                                 user.roles.includes('admin') ? "#f1c40f" : "#2ecc71",
+                                color: "#fff",
+                                textTransform: "uppercase"
+                            }}>
+                                {user.roles.includes('admin') ? 'Admin' : 
+                                 user.roles.includes('professor') ? 'Professore' : 'Studente'}
+                            </span>
+                        </>
+                    ) : (
+                        "Benvenuto in SpaceHub 💬"
+                    )}
                 </h1>
                 <p className="hero-subtitle">
                     Trova e prenota la tua aula ideale in pochi secondi

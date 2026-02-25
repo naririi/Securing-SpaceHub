@@ -1,22 +1,31 @@
 // disabilita il controllo SSL per i certificati self-signed
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-import { loginWithAppRole, getDbSecrets } from "./src/services/vault.js";
+import { loginWithAppRole, getDbSecrets, getTlsCerts, getRsaKeys } from "./src/services/vault.js";
 import express from "express";
 import path from "path";
 import { initDbPool } from "./src/services/db.js";
 import cors from "cors";
 import https from "https";
-import fs from "fs";
 
 // --- VAULT INIT
 await loginWithAppRole();
+
+// 1. Recupero Segreti DB
 const db = await getDbSecrets();
 process.env.DB_HOST = db.DB_HOST;
 process.env.DB_PORT = db.DB_PORT;
 process.env.DB_NAME = db.DB_NAME;
 process.env.DB_USER = db.DB_USER;
 process.env.DB_PASS = db.DB_PASS;
+
+// 2. Recupero Certificati TLS da Vault (In Memoria)
+const tlsCerts = await getTlsCerts();
+
+// 3. Recupero Chiavi RSA da Vault (Le salviamo globalmente)
+const rsaKeys = await getRsaKeys();
+process.env.BACKEND_PRIVATE_KEY = rsaKeys.privateKey;
+process.env.BACKEND_PUBLIC_KEY = rsaKeys.publicKey;
 
 // --- DB INIT
 await initDbPool();
@@ -57,10 +66,11 @@ app.get("/", (req, res) => {
 
 // --- SETUP HTTPS SERVER
 const httpsOptions = {
-    key: fs.readFileSync(path.join(__dirname, 'certs', 'server.key')),
-    cert: fs.readFileSync(path.join(__dirname, 'certs', 'server.cert'))
+    cert: tlsCerts.cert,
+    key: tlsCerts.key
 };
 
 https.createServer(httpsOptions, app).listen(port, () => {
-    console.log(`Server HTTPS in ascolto su https://localhost:${port}`); 
+    console.log(`Server HTTPS in ascolto su https://localhost:${port}`);
+    console.log(`[SECURE] Certificati TLS e chiavi RSA caricati dal Vault in RAM.`);
 });

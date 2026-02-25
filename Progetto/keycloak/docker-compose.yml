@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres_keycloak
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD} 
+    ports:
+      - "5432:5432"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: keycloak
+    depends_on:
+      - postgres
+    command: >
+      start
+      --https-certificate-file=/certs/keycloak.crt
+      --https-certificate-key-file=/certs/keycloak.key
+    volumes:
+      - ./certs:/certs
+    environment:
+      KEYCLOAK_ADMIN: ${KC_ADMIN_USER}         
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASS}  
+      KC_HOSTNAME: localhost
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: ${KC_DB_USER}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}        
+    ports:
+      - "8443:8443"
+
+volumes:
+  postgres_data:

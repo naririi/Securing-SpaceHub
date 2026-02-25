@@ -1,26 +1,9 @@
-import fs from 'fs';
 import { cardModel } from "../models/cardModel.js";
 import { readerModel } from "../models/readerModel.js";
 import { bookingModel } from "../models/bookingModel.js";
 import { logModel } from "../models/logModel.js";
 import { verifySignature, signData } from "../utils/cryptoUtils.js";
 
-// --- CONFIGURAZIONE DOTENV
-import path from "path";
-import dotenv from "dotenv";
-import { fileURLToPath } from "url";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '..', '.env') });
-// caricamento della chiave privata del server
-const SERVER_PRIVATE_KEY_PATH = process.env.SERVER_PRIVATE_KEY_PATH || path.resolve('keys', 'server_private.pem');
-let SERVER_PRIVATE_KEY;
-
-try {
-    SERVER_PRIVATE_KEY = fs.readFileSync(SERVER_PRIVATE_KEY_PATH, 'utf8');
-} catch (e) {
-    console.error("ERRORE CRITICO: Impossibile caricare la chiave privata del server!", e.message);
-}
 
 // --- CONTROLLA ACCESSO
 export const checkAccess = async (req, res) => {
@@ -28,13 +11,21 @@ export const checkAccess = async (req, res) => {
   // definizione funzione per prendere i dati, firmarli e inviarli al reader
   const sendSignedResponse = (statusCode, payload) => {
       try {
+          
+          const SERVER_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY;
+
+          if (!SERVER_PRIVATE_KEY) {
+              console.error("ERRORE CRITICO: Chiave privata del server non trovata in memoria!");
+              return res.status(500).json({ error: "Errore configurazione crittografica" });
+          }
+
           // aggiungiamo il timestamp del server per proteggere il lettore Python
           const payloadWithTime = {
               ...payload,
               server_timestamp: Date.now()
           };
 
-          // firma i dati usando la chiave privata del server (ora include il timestamp)
+          // firma i dati usando la chiave privata del server recuperata dal Vault
           const signature = signData(payloadWithTime, SERVER_PRIVATE_KEY);
           
           // invia JSON con dati + firma
@@ -72,7 +63,8 @@ export const checkAccess = async (req, res) => {
     // 2. recupera il reader
     const reader = await readerModel.getReaderByUID(reader_uid);
     if (!reader || !reader.is_active) {
-      await logModel.createLog(card.id, null, false, "Accesso negato: Reader non valido o inattivo");
+      // Modificato log: uso l'optional chaining (?.) nel caso card non esista
+      await logModel.createLog(card?.id || null, null, false, "Accesso negato: Reader non valido o inattivo");
       return sendSignedResponse(401, { access: false, message: "Reader non valido" });
     }
 

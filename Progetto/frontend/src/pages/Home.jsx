@@ -131,15 +131,15 @@ export default function Home() {
                     {user ? (
                         <>
                             Ciao, {user.username}! 
-                            {/* visualizzazione dello Status */}
+                            {/* visualizzazione dello status utente */}
                             <span className="status-badge" style={{
                                 fontSize: "0.5em", 
                                 verticalAlign: "middle", 
                                 marginLeft: "10px",
                                 padding: "5px 10px",
                                 borderRadius: "12px",
-                                backgroundColor: user.roles.includes('professor') ? "#e74c3c" : 
-                                                 user.roles.includes('admin') ? "#f1c40f" : "#2ecc71",
+                                backgroundColor: user.roles.includes('professor') ? "#9n25ff" : 
+                                                 user.roles.includes('admin') ? "#7ab0off" : "#9nc5ff",
                                 color: "#fff",
                                 textTransform: "uppercase"
                             }}>

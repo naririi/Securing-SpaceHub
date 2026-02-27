@@ -7,6 +7,8 @@ import path from "path";
 import { initDbPool } from "./src/services/db.js";
 import cors from "cors";
 import https from "https";
+import morgan from "morgan";
+import { createStream } from "rotating-file-stream";
 
 // --- VAULT INIT
 await loginWithAppRole();
@@ -44,8 +46,32 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- SETUP FOR FRONTEND
+// --- SETUP AUDIT LOGGING
+morgan.token('kc-user', (req) => req.user ? req.user.sub || req.user.id : 'Anonymous');
+morgan.token('kc-role', (req) => req.user ? req.user.realm_access?.roles?.join(',') || req.user.role : 'none');
+
+const logFormat = '[:date[iso]] IP: :remote-addr | User: :kc-user | Role: :kc-role | Action: ":method :url" | Status: :status';
+
 const __dirname = import.meta.dirname;
+const auditLogStream = createStream('audit-admin.log', {
+    interval: '1d', // un file al giorno
+    maxFiles: 7,    // conserva solo gli ultimi 7 file
+    path: path.join(__dirname, 'logs') // cartella dove verranno salvati
+});
+
+app.use(morgan(logFormat, {
+    stream: auditLogStream,
+    skip: (req, res) => {
+        // definizione di cosa è "privilegiato"
+        const isPrivilegedRole = req.user && (req.user.role === 'admin' || req.user.realm_access?.roles?.includes('admin'));
+        const isPoliciesRoute = req.originalUrl.startsWith('/api');
+        
+        // Se NON è admin e NON sta chiamando una rotta critica, SALTA il log
+        return !(isPrivilegedRole || isPoliciesRoute);
+    }
+}));
+
+// --- SETUP FOR FRONTEND
 const buildPath = path.join(__dirname, "..", "frontend", "dist");
 app.use(express.static(buildPath));
 
@@ -57,11 +83,11 @@ import policiesRoutes from "./src/routes/policiesRoutes.js";
 
 bookingsRoutes(app);
 readerRoutes(app);
-authRoutes(app); // le rotte di auth ora restituiranno 404/deprecated, ma lasciamo l'import per pulizia
+authRoutes(app); 
 policiesRoutes(app);
 
 app.get("/", (req, res) => {
-    res.sendFile(path.resolve(buildPath, "index.html"));    // routing for index.html
+    res.sendFile(path.resolve(buildPath, "index.html")); 
 });
 
 // --- SETUP HTTPS SERVER

@@ -66,7 +66,7 @@ export const requireLogin = (req, res, next) => {
             return res.status(401).json({ error: "Token non valido o scaduto" });
         }
 
-        const roles = decoded.realm_access?.roles || [];
+       const dbRole = getPrimaryRole(roles);
 
         // 3. se valido, attacchiamo i dati dell'utente alla richiesta
         req.user = {
@@ -75,20 +75,19 @@ export const requireLogin = (req, res, next) => {
             email: decoded.email,
             given_name: decoded.given_name,         // Nome (first_name)
             family_name: decoded.family_name,       // Cognome (last_name)
-            roles: roles
+            roles: roles,                           // Array originale di Keycloak
+            role: dbRole                            // ruolo primario per i log (Morgan) e per le rotte!
         };
 
         // --- SINCRONIZZAZIONE GLOBALE CON IL DB ---
-        // ogni volta che intercettiamo una richiesta protetta, aggiorniamo il DB
         try {
-            const dbRole = getPrimaryRole(roles);
             await userModel.syncUserKeycloak(
                 req.user.id, 
                 req.user.username, 
                 req.user.email, 
                 req.user.given_name, 
                 req.user.family_name, 
-                dbRole
+                req.user.role
             );
         } catch (dbErr) {
             console.error("Errore durante la sincronizzazione dell'utente nel DB:", dbErr);

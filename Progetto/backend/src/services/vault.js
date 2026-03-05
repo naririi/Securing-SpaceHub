@@ -45,13 +45,30 @@ export async function getDynamicDbCreds() {
 
 /**
  * legge i certificati TLS per HTTPS (KV v2)
- * path: secret/data/certs
  */
+
+/**
+ * --- OLD FUNCTION
 export async function getTlsCerts() {
   const res = await client.read("secret/data/certs");
   return {
     cert: res.data.data.backend_cert,
     key: res.data.data.backend_key
+  };
+}
+*/
+export async function getTlsCerts() {
+  console.log("[VAULT] Richiesta di un nuovo certificato TLS dinamico al motore PKI...");
+  
+  const res = await client.write("pki/issue/spacehub-role", {
+    common_name: "localhost",
+    ttl: "720h" // richiesta di un certificato valido per 30 giorni
+  });
+
+  return {
+    cert: res.data.certificate,   // certificato pubblico appena generato
+    key: res.data.private_key,    // chiave privata appena generata
+    ca: res.data.issuing_ca       // (opzionale) la Root CA che lo ha emesso
   };
 }
 

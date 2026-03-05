@@ -26,6 +26,7 @@ services:
       - ./certs:/certs
       - ./keycloak-theme/spacehub:/opt/keycloak/themes/spacehub
     environment:
+      KC_HTTPS_PROTOCOLS: TLSv1.3
       KC_SPI_THEME_CACHE_THEMES: false
       KC_SPI_THEME_CACHE_TEMPLATES: false
       KC_SPI_THEME_STATIC_MAX_AGE: -1

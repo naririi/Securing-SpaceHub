@@ -96,7 +96,7 @@ export default function Home() {
         return () => clearInterval(timer);
     }, [token]);
 
-    // gestione click su "Prenota Subito" (AGGIUNTO accessLevel)
+    // gestione click su "Prenota Subito"
     const handleQuickBook = (roomId, accessLevel) => {
         const now = new Date();
         const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);

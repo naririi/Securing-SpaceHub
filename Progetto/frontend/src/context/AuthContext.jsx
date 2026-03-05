@@ -25,6 +25,9 @@ export function AuthProvider({ children }) {
 
     // funzione logout: esegue il logout su Keycloak
     function logout() {
+        sessionStorage.clear(); // svuota eventuali dati di sessione residui nel browser
+        localStorage.clear();   // svuota il local storage per evitare object reuse
+        
         client.logout();
         setUser(null);
         setToken(null);
@@ -37,6 +40,17 @@ export function AuthProvider({ children }) {
 
     // viene eseguito al montaggio del componente, verifica subito se l'utente è loggato
     useEffect(() => {
+        // gestione automatica della scadenza del token
+        client.onTokenExpired = () => {
+            client.updateToken(30).then((refreshed) => {
+                if (refreshed) {
+                    setToken(client.token); // aggiorna lo stato col nuovo token
+                } else {
+                    logout(); // se fallisce (es. sessione scaduta), forza la pulizia e il logout
+                }
+            }).catch(() => logout());
+        };
+
         // inizializza Keycloak invece di chiamare checkAuth personalizzato
         client.init({ onLoad: "check-sso", checkLoginIframe: false })
             .then(authenticated => {

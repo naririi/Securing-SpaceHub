@@ -118,12 +118,12 @@ app.use(morgan(logFormat, {
 // --- SETUP ROUTES
 import bookingsRoutes from "./src/routes/bookingsRoutes.js";
 import readerRoutes from "./src/routes/readerRoutes.js";
-import authRoutes from "./src/routes/authRoutes.js";    // deprecato - gestisce keycloak
+// import authRoutes from "./src/routes/authRoutes.js";    // deprecato - gestisce keycloak
 import policiesRoutes from "./src/routes/policiesRoutes.js";
 
 bookingsRoutes(app);
 readerRoutes(app);
-authRoutes(app); 
+// authRoutes(app); 
 policiesRoutes(app);
 
 // --- SETUP HTTPS SERVER 

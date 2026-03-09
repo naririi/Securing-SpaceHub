@@ -149,11 +149,33 @@ export default function MyBookings() {
                                     <span style={{ fontSize: '1.5em' }}>
                                         {b.check_in ? "🪑" : "⏳"}
                                     </span>
-                                    <div>
-                                        <strong style={{ display: 'block', color: b.check_in ? '#2ecc71' : '#aaa' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <strong style={{ display: 'flex', alignItems: 'center', gap: '10px', color: b.check_in ? '#2ecc71' : '#aaa' }}>
                                             {b.check_in ? "Accesso fisico rilevato" : "Accesso fisico non rilevato"}
+                                            
+                                            {/* bottone che appare solo se non c'è ancora il check-in */}
+                                            {!b.check_in && (
+                                                <button 
+                                                    onClick={load}
+                                                    title="Ricontrolla accesso fisico"
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: '1px solid #aaa',
+                                                        borderRadius: '4px',
+                                                        cursor: 'pointer',
+                                                        color: '#aaa',
+                                                        padding: '2px 8px',
+                                                        fontSize: '0.8em',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '5px'
+                                                    }}
+                                                >
+                                                    🔄 Aggiorna
+                                                </button>
+                                            )}
                                         </strong>
-                                        <small style={{ color: '#ccc' }}>
+                                        <small style={{ color: '#ccc', display: 'block', marginTop: '4px' }}>
                                             {b.check_in 
                                                 ? "La porta è stata aperta tramite badge." 
                                                 : "Nessun ingresso registrato dal lettore."}

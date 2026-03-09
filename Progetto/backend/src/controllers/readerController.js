@@ -37,7 +37,6 @@ export const checkAccess = async (req, res) => {
   };
 
   try {
-    // AGGIUNTA ANTI-REPLAY: Estraiamo anche il timestamp inviato dal lettore
     const { card_uid, reader_uid, timestamp, signature } = req.body;
 
     // check sui dati (aggiunto il controllo su timestamp)
@@ -45,7 +44,7 @@ export const checkAccess = async (req, res) => {
       return res.status(400).json({ error: "Dati mancanti" });
     }
 
-    // validazione della finestra temporale (Replay Resistance)
+    // validazione della finestra temporale (replay resistance)
     const now = Date.now();
     const TOLERANCE_MS = 5000; // tolleranza di 5 secondi
     if (Math.abs(now - timestamp) > TOLERANCE_MS) {
@@ -69,7 +68,6 @@ export const checkAccess = async (req, res) => {
     }
 
     // 3. verifica firma (autenticità del reader) 
-    // includiamo il timestamp nell'oggetto da verificare
     const validSignature = verifySignature({ card_uid, reader_uid, timestamp }, signature, reader.public_key);
     if (!validSignature) {
       await logModel.createLog(card.id, reader.id, false, "Accesso negato: Firma non valida");

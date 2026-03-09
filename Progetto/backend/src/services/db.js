@@ -2,20 +2,23 @@ import mysql from "mysql2/promise";
 
 let pool = null;
 
-export async function initDbPool() {
+export async function initDbPool(dynamicUser, dynamicPassword) {
   if (!pool) {
     pool = mysql.createPool({
-      host: process.env.DB_HOST || "localhost",
+      // l'host deve essere il nome del container Docker!
+      host: process.env.DB_HOST || "mariadb", 
       port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASS,
-      database: process.env.DB_NAME,
+      // usiamo le credenziali dinamiche passate da Vault
+      user: dynamicUser,
+      password: dynamicPassword,
+      database: process.env.DB_NAME || "spacehub",
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
       timezone: "+00:00",
       charset: "utf8mb4"
     });
+    console.log(`[DB] Connessione al pool inizializzata con l'utente dinamico: ${dynamicUser}`);
   }
   return pool;
 }

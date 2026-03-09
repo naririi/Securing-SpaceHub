@@ -1,6 +1,9 @@
 -- scheme.sql
 -- database scheme definition file
 
+CREATE DATABASE IF NOT EXISTS spacehub;
+USE spacehub;
+
 --  USERS
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(36) NOT NULL PRIMARY KEY,

@@ -1,29 +1,25 @@
-// abilita il controllo SSL per i certificati self-signed
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "1";
-
-import { loginWithAppRole, getDbSecrets, getTlsCerts, getRsaKeys } from "./src/services/vault.js";
 import express from "express";
 import path from "path";
-import { initDbPool } from "./src/services/db.js";
 import cors from "cors";
+import fs from 'fs';
 import https from "https";
 import morgan from "morgan";
 import { createStream } from "rotating-file-stream";
 import rateLimit from "express-rate-limit";
+import helmet from 'helmet';
+
+import { loginWithAppRole, getDynamicDbCreds, getRsaKeys } from "./src/services/vault.js";
+import { initDbPool } from "./src/services/db.js";
 
 // --- VAULT INIT
 await loginWithAppRole();
 
-// 1. recupero Segreti DB
-const db = await getDbSecrets();
-process.env.DB_HOST = db.DB_HOST;
-process.env.DB_PORT = db.DB_PORT;
-process.env.DB_NAME = db.DB_NAME;
-process.env.DB_USER = db.DB_USER;
-process.env.DB_PASS = db.DB_PASS;
+// 1. recupero credenziali DINAMICHE database
+const dynamicDb = await getDynamicDbCreds();
 
 // 2. recupero certificati TLS da Vault
-const tlsCerts = await getTlsCerts();
+// deprecato - ora i certificati sono gestiti da nginx
+// const tlsCerts = await getTlsCerts();
 
 // 3. recupero chiavi RSA da Vault
 const rsaKeys = await getRsaKeys();
@@ -31,21 +27,47 @@ process.env.BACKEND_PRIVATE_KEY = rsaKeys.privateKey;
 process.env.BACKEND_PUBLIC_KEY = rsaKeys.publicKey;
 
 // --- DB INIT
-await initDbPool();
+await initDbPool(dynamicDb.username, dynamicDb.password);
 
 // --- SETUP BACKEND
 const app = express();
 const port = process.env.BACKEND_PORT || 3000;
 
+// dice a express di fidarsi degli IP passati dal reverse proxy (nginx)
+app.set('trust proxy', 1);
+
+// --- SETUP CORS
 app.use(cors({
-    origin: "https://localhost:5173",
+    // Aggiorniamo le origin per accettare le porte di Nginx
+    origin: ["https://localhost:8443", "https://localhost"], 
     credentials: true,
-    // aggiungiamo 'Authorization' agli header permessi per consentire il passaggio del Token Bearer
     allowedHeaders: ["Content-Type", "Authorization"] 
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// --- SETUP SECURITY HEADERS
+app.use(helmet());      // helmet di base applica di default header come X-Content-Type-Options: nosniff
+
+// forza header X-XSS-Protection per prevenire il furto del token dal sessionStorage
+app.use((req, res, next) => {
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+});
+
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"], // permette risorse solo dal nostro stesso dominio
+    // permettiamo gli script interni e le connessioni al nostro Keycloak/DB
+    scriptSrc: ["'self'", "'unsafe-inline'"], 
+    connectSrc: ["'self'", "https://localhost", "https://localhost:8443"],
+    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // per i font esterni
+    fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+    imgSrc: ["'self'", "data:"],
+    frameAncestors: ["'none'"], // previene il clickjacking
+  },
+}));
 
 // --- SETUP RATE LIMITING
 const apiLimiter = rateLimit({
@@ -60,8 +82,7 @@ const apiLimiter = rateLimit({
     legacyHeaders: false, // disabilita gli header deprecati
 });
 
-// applichiamo il rate limiter a tutte le rotte che iniziano per /api/
-// in modo da non bloccare il caricamento dei file statici del frontend
+// applichiamo il rate limiter a tutte le rotte che iniziano per /api
 app.use('/api', apiLimiter);
 
 // --- SETUP AUDIT LOGGING
@@ -90,13 +111,14 @@ app.use(morgan(logFormat, {
 }));
 
 // --- SETUP FOR FRONTEND
-const buildPath = path.join(__dirname, "..", "frontend", "dist");
-app.use(express.static(buildPath));
+// deprecato - servito staticamente da nginx in produzione
+// const buildPath = path.join(__dirname, "..", "frontend", "dist");
+// app.use(express.static(buildPath));
 
 // --- SETUP ROUTES
 import bookingsRoutes from "./src/routes/bookingsRoutes.js";
 import readerRoutes from "./src/routes/readerRoutes.js";
-import authRoutes from "./src/routes/authRoutes.js";
+import authRoutes from "./src/routes/authRoutes.js";    // deprecato - gestisce keycloak
 import policiesRoutes from "./src/routes/policiesRoutes.js";
 
 bookingsRoutes(app);
@@ -104,23 +126,19 @@ readerRoutes(app);
 authRoutes(app); 
 policiesRoutes(app);
 
-app.get("/", (req, res) => {
-    res.sendFile(path.resolve(buildPath, "index.html")); 
-});
-
-// --- SETUP HTTPS SERVER
+// --- SETUP HTTPS SERVER 
 const httpsOptions = {
-    cert: tlsCerts.cert,
-    key: tlsCerts.key,
-    minVersion: 'TLSv1.3' // forza TLS 1.3
+    cert: fs.readFileSync('/usr/src/app/certs/backend.crt'),
+    key: fs.readFileSync('/usr/src/app/certs/backend.key'),
+    minVersion: 'TLSv1.3' 
 };
 
 const server = https.createServer(httpsOptions, app);
 
-server.keepAliveTimeout = 20000; // 20 secondi
-server.headersTimeout = 21000;   // 21 secondi
+server.keepAliveTimeout = 20000; 
+server.headersTimeout = 21000;   
 
 server.listen(port, () => {
-    console.log(`Server HTTPS in ascolto su https://localhost:${port}`);
-    console.log(`[SECURE] Certificati TLS e chiavi RSA caricati dal Vault in RAM.`);
+    console.log(`[SECURE] API Backend in ascolto (con TLS 1.3) su porta interna ${port}`);
+    console.log(`[SECURE] Segreti DB e chiavi RSA caricati dal Vault in RAM.`);
 });

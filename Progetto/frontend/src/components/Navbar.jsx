@@ -35,7 +35,13 @@ export default function Navbar() {
                         </Link>
                         
                         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "15px", borderLeft: "1px solid #eee", paddingLeft: "15px" }}>
-                            <span className="user-greeting">Ciao, {user.username || user.preferred_username}</span>
+                            {/* visualizzazione dello status utente spostata qui */}
+                            <span className="user-greeting">
+                                Ciao, {user.username || user.preferred_username} ({
+                                    user.roles?.includes('admin') ? 'admin' : 
+                                    user.roles?.includes('professor') ? 'professore' : 'studente'
+                                })
+                            </span>
                             
                             <button onClick={logout} className="btn-logout">
                                 🚪 Logout

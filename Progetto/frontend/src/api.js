@@ -1,4 +1,4 @@
-const API_BASE = "https://localhost:3000";
+const API_BASE = "";
 
 // funzione helper per costruire gli headers
 function getHeaders(token) {

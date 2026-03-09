@@ -5,7 +5,7 @@ import {userModel} from "../models/userModel.js";
 
 // configurazione client per scaricare le chiavi pubbliche di Keycloak
 const client = jwksClient({
-    jwksUri: 'https://localhost:8443/realms/spacehub/protocol/openid-connect/certs'
+    jwksUri: 'https://keycloak:8443/realms/spacehub/protocol/openid-connect/certs'
 });
 
 // funzione helper per ottenere la chiave di firma
@@ -66,7 +66,8 @@ export const requireLogin = (req, res, next) => {
             return res.status(401).json({ error: "Token non valido o scaduto" });
         }
 
-       const dbRole = getPrimaryRole(roles);
+        const roles = decoded.realm_access?.roles || [];
+        const dbRole = getPrimaryRole(roles);
 
         // 3. se valido, attacchiamo i dati dell'utente alla richiesta
         req.user = {

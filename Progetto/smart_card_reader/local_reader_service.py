@@ -15,7 +15,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 dotenv_path = os.path.join(current_dir, '..', '.env')
 load_dotenv(dotenv_path=dotenv_path)
 
-BACKEND_URL = os.getenv("BACKEND_URL", "https://localhost:3000/api/controlla-accesso")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://localhost/api/controlla-accesso")
 READER_UID = os.getenv("READER_UID", "READER001")
 READER_PRIVATE_KEY_PATH = os.getenv("READER_PRIVATE_KEY", "./keys/reader_private.pem")
 SERVER_PUBLIC_KEY_PATH = os.getenv("SERVER_PUBLIC_KEY", "./keys/server_public.pem")

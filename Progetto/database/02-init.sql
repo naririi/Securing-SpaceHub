@@ -1,6 +1,9 @@
 -- init.sql
 -- database init file
 
+CREATE DATABASE IF NOT EXISTS spacehub;
+USE spacehub;
+
 -- USERS: dati di esempio
 -- da inserire nel keycloak
 

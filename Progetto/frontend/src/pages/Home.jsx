@@ -131,21 +131,6 @@ export default function Home() {
                     {user ? (
                         <>
                             Ciao, {user.username}! 
-                            {/* visualizzazione dello status utente */}
-                            <span className="status-badge" style={{
-                                fontSize: "0.5em", 
-                                verticalAlign: "middle", 
-                                marginLeft: "10px",
-                                padding: "5px 10px",
-                                borderRadius: "12px",
-                                backgroundColor: user.roles.includes('professor') ? "#9n25ff" : 
-                                                 user.roles.includes('admin') ? "#7ab0off" : "#9nc5ff",
-                                color: "#fff",
-                                textTransform: "uppercase"
-                            }}>
-                                {user.roles.includes('admin') ? 'Admin' : 
-                                 user.roles.includes('professor') ? 'Professore' : 'Studente'}
-                            </span>
                         </>
                     ) : (
                         "Benvenuto in SpaceHub 💬"

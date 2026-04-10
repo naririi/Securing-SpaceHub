@@ -6,6 +6,10 @@ LABEL description="Keycloak ottimizzato per Postgres con tema Spacehub custom"
 # Copiamo il tuo tema personalizzato dentro l'immagine
 COPY ./keycloak-theme/spacehub /opt/keycloak/themes/spacehub
 
+# Copiamo il pacchetto JAR dalla sottocartella js-policy
+COPY ./js-policy/my-js-policy.jar /opt/keycloak/providers/
+ENV KC_FEATURES=scripts
+
 # Diciamo a Keycloak di prepararsi a usare esclusivamente Postgres, scartando gli altri driver
 ENV KC_DB=postgres
 

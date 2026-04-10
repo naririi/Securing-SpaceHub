@@ -1,0 +1,9 @@
+{
+  "policies": [
+    {
+      "name": "La Mia Policy JS",
+      "fileName": "my-policy.js",
+      "description": "Policy custom in Javascript per spacehub"
+    }
+  ]
+}

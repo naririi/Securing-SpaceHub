@@ -28,3 +28,42 @@ export function checkRoomAccess(userRoles, requiredLevel) {
     // 4. se il livello dell'utente è maggiore o uguale a quello della stanza -> Accesso Consentito
     return userMaxLevel >= roomValue;
 }
+
+// helper per interrogare Keycloak
+export const checkKeycloakPermission = async (userToken, resourceName, scope) => {
+    try {
+        const token = userToken.replace("Bearer ", "");
+
+        const params = new URLSearchParams();
+        params.append("grant_type", "urn:ietf:params:oauth:grant-type:uma-ticket");
+        
+        // Specifichiamo quale client detiene le risorse e le policy
+        params.append("audience", process.env.KEYCLOAK_CLIENT_ID);
+        params.append("permission", `${resourceName}#${scope}`);
+        
+        // Autentichiamo il backend stesso a Keycloak
+        params.append("client_id", process.env.KEYCLOAK_CLIENT_ID);
+        params.append("client_secret", process.env.KEYCLOAK_CLIENT_SECRET);
+
+        const response = await fetch(`${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/token`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: params
+        });
+
+        // Se l'accesso è negato, logghiamo il motivo esatto per debug
+        if (!response.ok) {
+            const errorDetails = await response.text();
+            console.warn(`[Keycloak] Permesso negato per ${resourceName}#${scope}. Dettagli:`, errorDetails);
+            return false;
+        }
+
+        return true; 
+    } catch (error) {
+        console.error("Errore critico durante la verifica dei permessi su Keycloak:", error);
+        return false;
+    }
+};

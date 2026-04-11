@@ -33,8 +33,8 @@ services:
       - ./vault/data:/vault/file
       - ./vault/policies:/vault/policies:ro
       # WARN: qui devi mettere il tuo percorso assoluto - serve per log su vault-audit.log
-      - ./vault:/home/giu/Documenti/Securing-SpaceHub/Progetto/vault/
-    working_dir: "/home/giu/Documenti/Securing-SpaceHub/Progetto/vault/"
+      - ./vault:/home/blakk/Documenti/Securing-SpaceHub/Progetto/vault/
+    working_dir: "/home/blakk/Documenti/Securing-SpaceHub/Progetto/vault/"
     ports:
       - "8200:8200"
     command: server
@@ -50,6 +50,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: keycloak
+      TZ: Europe/Rome
       POSTGRES_USER: ${KC_DB_USER:-keycloak}
       POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
     networks:
@@ -73,6 +74,7 @@ services:
       KC_SPI_THEME_CACHE_THEMES: false
       KC_SPI_THEME_CACHE_TEMPLATES: false
       KC_SPI_THEME_STATIC_MAX_AGE: -1
+      TZ: Europe/Rome
       KEYCLOAK_ADMIN: ${KC_ADMIN_USER}         
       KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASS}  
       KC_FEATURES: preview,scripts
@@ -93,6 +95,7 @@ services:
     container_name: mariadb_spacehub
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: Europe/Rome
       MYSQL_DATABASE: spacehub
     volumes:
       - mariadb_data:/var/lib/mysql
@@ -113,6 +116,7 @@ services:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
       - VAULT_ROLE_ID=${VAULT_ROLE_ID}
       - VAULT_SECRET_ID=${VAULT_SECRET_ID}
+      - TZ=Europe/Rome
       - VAULT_ADDR=https://vault:8200 
       - NODE_EXTRA_CA_CERTS=/usr/src/app/vault.crt
       - KEYCLOAK_URL=https://keycloak:8443

@@ -1,12 +1,16 @@
-import {pool} from "../services/db.js";
+import { pool } from "../services/db.js";
 
 export const logModel = {
-
-    async createLog(cardId, readerId, accessGranted, message) {
+    async createLog(cardUid, readerUid, accessGranted, message) {
         await pool.query(
-        `INSERT INTO access_logs (card_id, reader_id, access_granted, message)
-        VALUES (?, ?, ?, ?)`,
-        [cardId, readerId, accessGranted ? 1 : 0, message]
+            `INSERT INTO access_logs (card_id, reader_id, access_granted, message)
+             VALUES (
+                 (SELECT id FROM cards WHERE card_uid = ?), 
+                 (SELECT id FROM readers WHERE reader_uid = ?), 
+                 ?, 
+                 ?
+             )`,
+            [cardUid, readerUid, accessGranted ? 1 : 0, message]
         );
     }
 };

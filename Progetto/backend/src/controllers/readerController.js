@@ -4,14 +4,12 @@ import { bookingModel } from "../models/bookingModel.js";
 import { logModel } from "../models/logModel.js";
 import { verifySignature, signData } from "../utils/cryptoUtils.js";
 
-
 // --- CONTROLLA ACCESSO
 export const checkAccess = async (req, res) => {
 
   // definizione funzione per prendere i dati, firmarli e inviarli al reader
   const sendSignedResponse = (statusCode, payload) => {
       try {
-          
           const SERVER_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY;
 
           if (!SERVER_PRIVATE_KEY) {
@@ -48,29 +46,28 @@ export const checkAccess = async (req, res) => {
     const now = Date.now();
     const TOLERANCE_MS = 5000; // tolleranza di 5 secondi
     if (Math.abs(now - timestamp) > TOLERANCE_MS) {
-      await logModel.createLog(null, reader_uid, false, "Accesso negato: Replay Attack rilevato (Timestamp scaduto)");
+      await logModel.createLog(card_uid, reader_uid, false, "Accesso negato: Replay Attack rilevato (Timestamp scaduto)");
       return sendSignedResponse(401, { access: false, message: "Richiesta scaduta o orologio non sincronizzato" });
     }
 
     // 1. recupera la card
     const card = await cardModel.getCardByUID(card_uid);
     if (!card || !card.active) {
-      await logModel.createLog(null, reader_uid, false, "Accesso negato: Card non valida o inattiva");
+      await logModel.createLog(card_uid, reader_uid, false, "Accesso negato: Card non valida o inattiva");
       return sendSignedResponse(401, { access: false, message: "Card non valida" });
     }
 
     // 2. recupera il reader
     const reader = await readerModel.getReaderByUID(reader_uid);
     if (!reader || !reader.is_active) {
-      // Modificato log: uso l'optional chaining (?.) nel caso card non esista
-      await logModel.createLog(card?.id || null, null, false, "Accesso negato: Reader non valido o inattivo");
+      await logModel.createLog(card_uid, reader_uid, false, "Accesso negato: Reader non valido o inattivo");
       return sendSignedResponse(401, { access: false, message: "Reader non valido" });
     }
 
     // 3. verifica firma (autenticità del reader) 
     const validSignature = verifySignature({ card_uid, reader_uid, timestamp }, signature, reader.public_key);
     if (!validSignature) {
-      await logModel.createLog(card.id, reader.id, false, "Accesso negato: Firma non valida");
+      await logModel.createLog(card_uid, reader_uid, false, "Accesso negato: Firma non valida");
       return sendSignedResponse(401, { access: false, message: "Firma non valida" });
     }
 
@@ -78,17 +75,18 @@ export const checkAccess = async (req, res) => {
     const booking = await bookingModel.getActiveBookingForUserInRoom(
       card.user_id,
       reader.room_id,
-      new Date(now) // utilizziamo il 'now' calcolato in precedenza
+      new Date(now)
     );
 
     if (!booking) {
-      await logModel.createLog(card.id, reader.id, false, "Accesso negato: Nessuna prenotazione");
+      await logModel.createLog(card_uid, reader_uid, false, "Accesso negato: Nessuna prenotazione");
       return sendSignedResponse(403, { access: false, message: "Nessuna prenotazione valida ora" });
     }
 
     // 5. accesso consentito
     await bookingModel.setCheckInStatus(booking.id);
-    await logModel.createLog(card.id, reader.id, true, "Accesso consentito: Prenotazione valida");
+    await logModel.createLog(card_uid, reader_uid, true, "Accesso consentito: Prenotazione valida");
+    
     return sendSignedResponse(200, { access: true, message: "Accesso autorizzato" });
 
   } catch (err) {
